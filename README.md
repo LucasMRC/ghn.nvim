@@ -11,6 +11,22 @@ ever seen. But I couln't find a plugin that did what I wanted, so I decided to m
 ## Dependencies
 [Octo.nvim](https://github.com/pwntester/octo.nvim) is used to manage PRs and issues.
 
+## Installation
+
+You can install this plugin using your favorite plugin manager. I use `lazy.nvim`, so
+
+```lua
+{
+	'lucasMRC/ghn.nvim',
+	dependencies = {
+		'pwntester/octo.nvim',
+	},
+	config = function()
+		require("ghn").setup()
+	end,
+}
+```
+
 ## How it works
 
 In order to be able to use this plugin, you need to create a Github token.
