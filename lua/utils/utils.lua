@@ -14,7 +14,7 @@ end
 
 M.get_item_id = function(ln)
 	local line = M.get_line_text(ln)
-	if line == "" or line:find("[NAO].* %(%d+%)$") then
+	if ln == 1 or line == "" or line:find("[NAO].* %(%d+%)$") then
 		return
 	end
 	while line:match("%[[NIPR]*%.id (%d+)%]$") == nil do
@@ -26,7 +26,7 @@ end
 
 M.get_item_type = function(ln)
 	local line = M.get_line_text(ln)
-	if line == "" or line:find("[NAO].* %(%d+%)$") then
+	if ln == 1 or line == "" or line:find("[NAO].* %(%d+%)$") then
 		return
 	end
 	while line:match("%[[NIPR]*%.id %d+%]$") == nil do
