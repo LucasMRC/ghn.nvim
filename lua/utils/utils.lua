@@ -5,7 +5,7 @@ M.get_line_text = function(ln)
 end
 
 M.prompt_for_token = function(path)
-	local input = vim.fn.input({ prompt = "Enter token: "})
+	local input = vim.fn.input({ prompt = "Enter token: " })
 	local f = assert(io.open(path .. "/ghn.pass", "w"))
 	f:write(input)
 	f:close()
@@ -71,7 +71,7 @@ M.get_multiple_item_ids = function()
 	end
 	local ids = {}
 	for i, t in pairs(present) do
-		table.insert(ids, {id = i, type = t})
+		table.insert(ids, { id = i, type = t })
 	end
 
 	return ids

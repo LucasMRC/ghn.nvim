@@ -55,7 +55,10 @@ M.display = function()
 		else
 			line = opts.toggle_marks.closed
 		end
-		line = line	.. " " .. notification.type .. " #" .. notification.number .. " - " .. notification.title .. " [N.id " .. notification.id .. "]"
+		line = line ..
+		" " ..
+		notification.type ..
+		" #" .. notification.number .. " - " .. notification.title .. " [N.id " .. notification.id .. "]"
 		table.insert(lines, line)
 		if notification.open then
 			opened_items = opened_items + 1
@@ -76,7 +79,7 @@ M.display = function()
 		else
 			line = opts.toggle_marks.closed
 		end
-		line = line	.. " #" .. issue.number .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
+		line = line .. " #" .. issue.number .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
 		table.insert(lines, line)
 		if issue.open then
 			opened_items = opened_items + 1
@@ -90,7 +93,8 @@ M.display = function()
 			end
 			table.insert(lines, "\t| Tags: " .. tags)
 			table.insert(lines, "\t| Url: " .. issue.url)
-			table.insert(lines, "\t| Updated: " .. time.format(issue.updated_at))		end
+			table.insert(lines, "\t| Updated: " .. time.format(issue.updated_at))
+		end
 	end
 	table.insert(lines, "")
 	table.insert(lines, "Opened PRs (" .. #M._pull_requests .. ")")
@@ -103,13 +107,13 @@ M.display = function()
 		else
 			line = opts.toggle_marks.closed
 		end
-		line = line	.. " #" .. pr.number .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
+		line = line .. " #" .. pr.number .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
 		table.insert(lines, line)
 		if pr.open then
 			opened_items = opened_items + 1
 			table.insert(lines, "\t| Repo: " .. pr.repository)
 			table.insert(lines, "\t| Url: " .. pr.url)
-			table.insert(lines, "\t| Updated: " ..time.format(pr.updated_at))
+			table.insert(lines, "\t| Updated: " .. time.format(pr.updated_at))
 		end
 	end
 	vim.api.nvim_set_option_value("modified", true, { scope = "local" })
@@ -192,8 +196,13 @@ end
 M.get_notifications = function()
 	vim.notify("Fetching notifications", vim.log.levels.INFO)
 	local url = "https://api.github.com/notifications"
-	local result = vim.system({'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H', 'Accept: application/vnd.github+json', url }, {}):wait()
-	local parsed = vim.system({ 'jq', '-cj', '[ .[] | {"id": .id, "title": .subject.title, "url": .subject.url, "reason": .reason, "type": .subject.type, "repository": .repository.full_name, "updated_at": .updated_at } ]' }, { stdin = result.stdout:gsub("\n", " ") }):wait()
+	local result = vim.system(
+	{ 'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H', 'Accept: application/vnd.github+json',
+		url }, {}):wait()
+	local parsed = vim.system(
+	{ 'jq', '-cj',
+		'[ .[] | {"id": .id, "title": .subject.title, "url": .subject.url, "reason": .reason, "type": .subject.type, "repository": .repository.full_name, "updated_at": .updated_at } ]' },
+		{ stdin = result.stdout:gsub("\n", " ") }):wait()
 	M._notifications = {}
 	for _, item in ipairs(vim.json.decode(parsed.stdout)) do
 		item.open = opts.default_open
@@ -209,8 +218,13 @@ end
 M.get_pull_requests = function()
 	vim.notify("Fetching pull requests", vim.log.levels.INFO)
 	local url = "https://api.github.com/search/issues?q=+type:pr+author:@me+state:open"
-	local result = vim.system({'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H', 'Accept: application/vnd.github.text-match+json', url }, {}):wait()
-	local parsed = vim.system({ 'jq', '-cj', '[ .items.[] | {"id": .id, "title": .title, "url": .html_url, "author": .user.login, "repository": .repository_url, "updated_at": .updated_at } ]' }, { stdin = result.stdout:gsub("\n", " ") }):wait()
+	local result = vim.system(
+	{ 'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H',
+		'Accept: application/vnd.github.text-match+json', url }, {}):wait()
+	local parsed = vim.system(
+	{ 'jq', '-cj',
+		'[ .items.[] | {"id": .id, "title": .title, "url": .html_url, "author": .user.login, "repository": .repository_url, "updated_at": .updated_at } ]' },
+		{ stdin = result.stdout:gsub("\n", " ") }):wait()
 	M._pull_requests = {}
 	for _, item in ipairs(vim.json.decode(parsed.stdout)) do
 		item.id = tostring(item.id)
@@ -224,8 +238,13 @@ end
 M.get_issues = function()
 	vim.notify("Fetching issues", vim.log.levels.INFO)
 	local url = "https://api.github.com/issues"
-	local result = vim.system({ 'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H', 'Accept: application/vnd.github+json', url }, {}):wait()
-	local parsed = vim.system({ 'jq', '-cj', '[ .[] | {"id": .id, "title": .title, "url": .html_url, "labels": [ .labels.[] | { "name": .name, "color": .color } ], "author": .user.login, "repository": .repository.full_name, "updated_at": .updated_at, "number": .number } ]' }, { stdin = result.stdout:gsub("\n", " ") }):wait()
+	local result = vim.system(
+	{ 'curl', '-s', '-X', 'GET', '-H', 'Authorization: Bearer ' .. token, '-H', 'Accept: application/vnd.github+json',
+		url }, {}):wait()
+	local parsed = vim.system(
+	{ 'jq', '-cj',
+		'[ .[] | {"id": .id, "title": .title, "url": .html_url, "labels": [ .labels.[] | { "name": .name, "color": .color } ], "author": .user.login, "repository": .repository.full_name, "updated_at": .updated_at, "number": .number } ]' },
+		{ stdin = result.stdout:gsub("\n", " ") }):wait()
 	M._issues = {}
 	for _, item in ipairs(vim.json.decode(parsed.stdout)) do
 		item.open = opts.default_open
@@ -267,7 +286,7 @@ M.copy_url = function()
 		type_list = M._pull_requests
 	end
 	local item = utils.find_by_id(type_list, id).n
-	vim.cmd("let @+ = \"".. item.url .. "\"")
+	vim.cmd("let @+ = \"" .. item.url .. "\"")
 	vim.notify("Copied " .. item.url .. " to clipboard", vim.log.levels.INFO)
 end
 
@@ -284,7 +303,7 @@ M.copy_item_number = function()
 		type_list = M._pull_requests
 	end
 	local item = utils.find_by_id(type_list, id).n
-	vim.cmd("let @+ = \"".. item.number .. "\"")
+	vim.cmd("let @+ = \"" .. item.number .. "\"")
 	vim.notify("Copied " .. item.number .. " to clipboard", vim.log.levels.INFO)
 end
 
@@ -296,7 +315,8 @@ M.mark_as_read = function()
 	end
 	local id = utils.get_item_id(cursor)
 	local url = "https://api.github.com/notifications/threads/" .. id
-	vim.system({ 'curl', '-s', '-X', 'PATCH', '-H', 'Accept: application/vnd.github+json', '-H', 'Authorization: Bearer ' .. token, '-H', 'X-Github-Api-Version: 2022-11-28', url })
+	vim.system({ 'curl', '-s', '-X', 'PATCH', '-H', 'Accept: application/vnd.github+json', '-H', 'Authorization: Bearer ' ..
+	token, '-H', 'X-Github-Api-Version: 2022-11-28', url })
 	vim.notify("Notification " .. id .. " marked as read")
 	M.get_notifications()
 	M.display()
@@ -326,6 +346,13 @@ M.refresh = function()
 	M.display()
 end
 
+M.start_loop = function()
+	utils.set_interval(3600000, function()
+		vim.system({ 'sh', '/home/lucas/.config/scripts/github/notifier.sh' })
+		M.refresh()
+	end)
+end
+
 M.open = function()
 	vim.api.nvim_create_buf(true, true)
 	vim.api.nvim_buf_set_name(0, "GHN")
@@ -341,7 +368,7 @@ M.open = function()
 	vim.keymap.set({ "n" }, opts.mappings.copy_number, M.copy_item_number, { buffer = 0 })
 	vim.keymap.set({ "n" }, opts.mappings.mark_as_read, M.mark_as_read, { buffer = 0 })
 	vim.keymap.set({ "n" }, opts.mappings.open_in_browser, M.open_in_browser, { buffer = 0 })
-	M.refresh()
+	M.start_loop()
 end
 
 M.setup = function(setup_opts)
@@ -355,9 +382,16 @@ M.setup = function(setup_opts)
 		end
 	end
 	local augroup = vim.api.nvim_create_augroup("GHN", { clear = true })
-	vim.api.nvim_create_autocmd("VimEnter", { group = augroup, desc = "GitHub Notifications", once = true, callback = function()
-		vim.keymap.set({ "n", "v" }, "<leader>gn", M.start, { desc = "[G]ithub [N]otifications" , noremap = true, silent = true })
-	end })
+	vim.api.nvim_create_autocmd("VimEnter",
+		{
+			group = augroup,
+			desc = "GitHub Notifications",
+			once = true,
+			callback = function()
+				vim.keymap.set({ "n", "v" }, "<leader>gn", M.start,
+					{ desc = "[G]ithub [N]otifications", noremap = true, silent = true })
+			end
+		})
 end
 
 return M

@@ -1,6 +1,6 @@
 vim.cmd.syntax([[match GhnTitle 'Github Dashboard']])
 vim.cmd.syntax([[match GhnTotal '(\d*)']])
-vim.cmd.syntax([[match NotType '. \%\[\(Issue\|PullRequest\) \]#\d*']])
+vim.cmd.syntax([[match NotType '. \%\[\(Issue\|PullRequest\|Commit\) \]#\d*']])
 vim.cmd.syntax([[match NotTitle '- .* \['ms=s+2,me=e-1]])
 vim.cmd.syntax([[match NotNumber '\[\(N\|I\|PR\)\.id \d*\]']])
 vim.cmd.syntax([[match NotValue ': .*'ms=s+2]])
