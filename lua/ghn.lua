@@ -1,5 +1,6 @@
 local utils = require("utils/utils")
 local time = require("utils/time")
+local augroup = vim.api.nvim_create_augroup("GHN", { clear = true })
 local token = ""
 local _flags = {
 	i = false,
@@ -89,7 +90,7 @@ M.display = function()
 		table.insert(lines, line)
 		if issue.open then
 			opened_items = opened_items + 1
-			table.insert(lines, "\t| Author: " .. issue.author)
+			table.insert(lines, "\t| Author: @" .. issue.author)
 			local tags = ""
 			for j, tag in ipairs(issue.labels) do
 				tags = tags .. tag.name
@@ -351,12 +352,14 @@ M.mark_as_read = function()
 		return vim.notify("Not a notification", vim.log.levels.ERROR)
 	end
 	local url = "https://api.github.com/notifications/threads/" .. id
-	vim.system({ 'curl', '-s', '-X', 'PATCH', '-H', 'Accept: application/vnd.github+json', '-H', 'Authorization: Bearer ' ..
-	token, '-H', 'X-Github-Api-Version: 2022-11-28', url })
-	vim.notify("Notification " .. id .. " marked as read")
-	_flags.pr = true
-	_flags.i = true
-	M.get_notifications()
+	vim.system(
+		{ 'curl', '-s', '-X', 'PATCH', '-H', 'Accept: application/vnd.github+json', '-H', 'Authorization: Bearer ' ..
+		token, '-H', 'X-Github-Api-Version: 2022-11-28', url }, {}, vim.schedule_wrap(function()
+			vim.notify("Notification " .. id .. " marked as read")
+			_flags.pr = true
+			_flags.i = true
+			M.get_notifications()
+		end))
 end
 
 M.open_in_browser = function()
@@ -391,21 +394,29 @@ M.start_loop = function()
 end
 
 M.open = function()
-	vim.api.nvim_create_buf(true, true)
-	vim.api.nvim_buf_set_name(0, "GHN")
-	vim.api.nvim_set_option_value("filetype", "GHN", { scope = "local" })
-	vim.keymap.set({ "n" }, "<CR>", M.toggle_item, { buffer = 0 })
-	vim.keymap.set({ "v" }, "<CR>", M.toggle_multiple_items, { buffer = 0 })
-	vim.keymap.set({ "n" }, opts.mappings.toggle_item, M.toggle_item, { buffer = 0 })
-	vim.keymap.set({ "v" }, opts.mappings.toggle_item, M.toggle_multiple_items, { buffer = 0 })
-	vim.keymap.set({ "n", "v" }, opts.mappings.open_item, M.open_item, { buffer = 0 })
-	vim.keymap.set({ "n", "v" }, opts.mappings.refresh, M.refresh, { buffer = 0 })
-	vim.keymap.set({ "n", "v" }, opts.mappings.close_all, M.close_all, { buffer = 0 })
-	vim.keymap.set({ "n" }, opts.mappings.copy_url, M.copy_url, { buffer = 0 })
-	vim.keymap.set({ "n" }, opts.mappings.copy_number, M.copy_item_number, { buffer = 0 })
-	vim.keymap.set({ "n" }, opts.mappings.mark_as_read, M.mark_as_read, { buffer = 0 })
-	vim.keymap.set({ "n" }, opts.mappings.open_in_browser, M.open_in_browser, { buffer = 0 })
-	M.start_loop()
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	require("octo.model.octo-buffer").OctoBuffer:new { bufnr = bufnr }
+	vim.api.nvim_buf_set_name(bufnr, "GHN")
+	vim.api.nvim_set_option_value("filetype", "GHN", { buf = bufnr })
+	vim.api.nvim_win_set_buf(0, bufnr)
+	vim.keymap.set({ "n" }, "<CR>", M.toggle_item, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "v" }, "<CR>", M.toggle_multiple_items, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n" }, opts.mappings.toggle_item, M.toggle_item, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "v" }, opts.mappings.toggle_item, M.toggle_multiple_items, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n", "v" }, opts.mappings.open_item, M.open_item, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n", "v" }, opts.mappings.refresh, M.refresh, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n", "v" }, opts.mappings.close_all, M.close_all, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n" }, opts.mappings.copy_url, M.copy_url, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n" }, opts.mappings.copy_number, M.copy_item_number, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n" }, opts.mappings.mark_as_read, M.mark_as_read, { buffer = bufnr, noremap = true })
+	vim.keymap.set({ "n" }, opts.mappings.open_in_browser, M.open_in_browser, { buffer = bufnr, noremap = true })
+	M.refresh()
+
+	vim.api.nvim_create_autocmd("CursorHold", {
+		group = augroup,
+		buffer = bufnr,
+		callback = require "octo".on_cursor_hold
+	})
 end
 
 M.setup = function(setup_opts)
@@ -418,7 +429,6 @@ M.setup = function(setup_opts)
 			end
 		end
 	end
-	local augroup = vim.api.nvim_create_augroup("GHN", { clear = true })
 	vim.api.nvim_create_autocmd("VimEnter",
 		{
 			group = augroup,
