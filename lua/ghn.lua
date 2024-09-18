@@ -53,31 +53,21 @@ M.display = function()
 		"",
 		"Notifications (" .. #M._notifications .. ")",
 	}
-	local opened_items = 0
 	for i, notification in ipairs(M._notifications) do
-		notification.line = 3 + i + (opened_items * 4)
-		local line = ""
-		if notification.open then
-			line = opts.toggle_marks.open
-		else
-			line = opts.toggle_marks.closed
-		end
-		line = line ..
-			" " ..
+		notification.line = 3 + i
+		local line = notification.repository ..
+			"#" ..
+			notification.number ..
+			" (" .. time.format(notification.updated_at) .. ")" ..
+			" - " ..
 			notification.type ..
-			" #" .. notification.number .. " - " .. notification.title .. " [N.id " .. notification.id .. "]"
+			": " ..
+			notification.title .. " [N.id " .. notification.id .. "]"
 		table.insert(lines, line)
-		if notification.open then
-			opened_items = opened_items + 1
-			table.insert(lines, "\t| Repo: " .. notification.repository)
-			table.insert(lines, "\t| Reason: " .. notification.reason)
-			table.insert(lines, "\t| Url: " .. notification.url)
-			table.insert(lines, "\t| Updated: " .. time.format(notification.updated_at))
-		end
 	end
 	table.insert(lines, "")
 	table.insert(lines, "Assigned issues (" .. #M._issues .. ")")
-	opened_items = 0
+	local opened_items = 0
 	for i, issue in ipairs(M._issues) do
 		issue.line = 3 + #M._notifications + 2 + i + (opened_items * 3)
 		local line = ""
