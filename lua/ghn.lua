@@ -16,14 +16,7 @@ M._pull_requests = {}
 M._issues = {}
 
 local default_opts = {
-	default_open = false,
-	toggle_marks = {
-		open = "v",
-		closed = ">"
-	},
 	mappings = {
-		toggle_item = "o",
-		close_all = "u",
 		open_item = "O",
 		refresh = "R",
 		copy_url = "Y",
@@ -66,52 +59,23 @@ M.display = function()
 		table.insert(lines, line)
 	end
 	table.insert(lines, "")
-	table.insert(lines, "Assigned issues (" .. #M._issues .. ")")
-	local opened_items = 0
+	table.insert(lines, "Assigned Issues (" .. #M._issues .. ")")
 	for i, issue in ipairs(M._issues) do
-		issue.line = 3 + #M._notifications + 2 + i + (opened_items * 3)
-		local line = ""
-		if issue.open then
-			line = opts.toggle_marks.open
-		else
-			line = opts.toggle_marks.closed
-		end
-		line = line .. " #" .. issue.number .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
+		issue.line = 3 + #M._notifications + 2 + i
+		local line = issue.repository ..
+			"#" ..
+			issue.number ..
+			" (" .. time.format(issue.updated_at) .. ")" .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
 		table.insert(lines, line)
-		if issue.open then
-			opened_items = opened_items + 1
-			table.insert(lines, "\t| Author: @" .. issue.author)
-			local tags = ""
-			for j, tag in ipairs(issue.labels) do
-				tags = tags .. tag.name
-				if j < #tags then
-					tags = tags .. ", "
-				end
-			end
-			table.insert(lines, "\t| Tags: " .. tags)
-			table.insert(lines, "\t| Url: " .. issue.url)
-			table.insert(lines, "\t| Updated: " .. time.format(issue.updated_at))
-		end
 	end
 	table.insert(lines, "")
 	table.insert(lines, "Opened PRs (" .. #M._pull_requests .. ")")
-	opened_items = 0
 	for i, pr in ipairs(M._pull_requests) do
-		pr.line = 3 + #M._notifications + 2 + #M._issues + 2 + i + (opened_items * 3)
-		local line = ""
-		if pr.open then
-			line = opts.toggle_marks.open
-		else
-			line = opts.toggle_marks.closed
-		end
-		line = line .. " #" .. pr.number .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
+		pr.line = 3 + #M._notifications + 2 + #M._issues + 2 + i
+		local line = pr.repository ..
+			"#" ..
+			pr.number .. " (" .. time.format(pr.updated_at) .. ")" .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
 		table.insert(lines, line)
-		if pr.open then
-			opened_items = opened_items + 1
-			table.insert(lines, "\t| Repo: " .. pr.repository)
-			table.insert(lines, "\t| Url: " .. pr.url)
-			table.insert(lines, "\t| Updated: " .. time.format(pr.updated_at))
-		end
 	end
 	vim.api.nvim_set_option_value("modified", true, { scope = "local" })
 	vim.api.nvim_set_option_value("modifiable", true, { scope = "local" })
@@ -127,69 +91,6 @@ M.display = function()
 	vim.api.nvim_win_set_cursor(0, cursor)
 end
 
-M.close_all = function()
-	for _, i in ipairs(M._issues) do
-		i.open = false
-	end
-	for _, n in ipairs(M._notifications) do
-		n.open = false
-	end
-	for _, p in ipairs(M._pull_requests) do
-		p.open = false
-	end
-	M.display()
-end
-
-M.toggle_item = function()
-	local cursor = vim.api.nvim_win_get_cursor(0)[1]
-	local id = utils.get_item_id(cursor)
-	local type = utils.get_item_type(cursor)
-	if not id then
-		return vim.notify("Cursor not in a valid item", vim.log.levels.ERROR)
-	else
-		local type_list = {}
-		if type == 'issue' then
-			type_list = M._issues
-		elseif type == 'notification' then
-			type_list = M._notifications
-		elseif type == 'pr' then
-			type_list = M._pull_requests
-		end
-		local r = utils.find_by_id(type_list, id)
-		r.n.open = not r.n.open
-		type_list[r.i] = r.n
-		M.display()
-		vim.api.nvim_win_set_cursor(0, { r.n.line, 0 })
-	end
-end
-
-M.toggle_multiple_items = function()
-	local cursor = vim.api.nvim_win_get_cursor(0)[1]
-	local ids = utils.get_multiple_item_ids()
-	if not ids then
-		return vim.notify("Cursor not in a valid item", vim.log.levels.ERROR)
-	end
-	for _, item in ipairs(ids) do
-		local list = {}
-		if item.type == "issue" then
-			list = M._issues
-		elseif item.type == "notification" then
-			list = M._notifications
-		elseif item.type == "pr" then
-			list = M._pull_requests
-		end
-		local r = utils.find_by_id(list, item.id)
-		r.n.open = not r.n.open
-		list[r.i] = r.n
-	end
-	M.display()
-	local lastLine = vim.api.nvim_buf_line_count(0)
-	if lastLine < cursor then
-		cursor = lastLine
-	end
-	vim.api.nvim_win_set_cursor(0, { cursor, 0 })
-end
-
 M.get_notifications = function()
 	vim.notify("Fetching notifications", vim.log.levels.INFO)
 	local url = "https://api.github.com/notifications"
@@ -202,7 +103,6 @@ M.get_notifications = function()
 				{ stdin = result.stdout:gsub("\n", " ") }, vim.schedule_wrap(function(parsed)
 					M._notifications = {}
 					for _, item in ipairs(vim.json.decode(parsed.stdout)) do
-						item.open = opts.default_open
 						item.number = item.url:match("%d*$")
 						item.url = item.url:gsub("api%.", ""):gsub("repos/", "")
 						if item.type == "PullRequest" then
@@ -234,7 +134,6 @@ M.get_pull_requests = function()
 					M._pull_requests = {}
 					for _, item in ipairs(vim.json.decode(parsed.stdout)) do
 						item.id = tostring(item.id)
-						item.open = opts.default_open
 						item.number = item.url:match("%d*$")
 						item.repository = item.repository:gsub("https://api%.github%.com/repos/", "")
 						table.insert(M._pull_requests, item)
@@ -262,7 +161,6 @@ M.get_issues = function()
 				{ stdin = result.stdout:gsub("\n", " ") }, vim.schedule_wrap(function(parsed)
 					M._issues = {}
 					for _, item in ipairs(vim.json.decode(parsed.stdout)) do
-						item.open = opts.default_open
 						item.id = tostring(item.id)
 						table.insert(M._issues, item)
 					end
@@ -387,15 +285,10 @@ M.open = function()
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	require("octo.model.octo-buffer").OctoBuffer:new { bufnr = bufnr }
 	vim.api.nvim_buf_set_name(bufnr, "GHN")
-	vim.api.nvim_set_option_value("filetype", "GHN", { buf = bufnr })
+	vim.api.nvim_set_option_value("filetype", "ghn", { buf = bufnr })
 	vim.api.nvim_win_set_buf(0, bufnr)
-	vim.keymap.set({ "n" }, "<CR>", M.toggle_item, { buffer = bufnr, noremap = true })
-	vim.keymap.set({ "v" }, "<CR>", M.toggle_multiple_items, { buffer = bufnr, noremap = true })
-	vim.keymap.set({ "n" }, opts.mappings.toggle_item, M.toggle_item, { buffer = bufnr, noremap = true })
-	vim.keymap.set({ "v" }, opts.mappings.toggle_item, M.toggle_multiple_items, { buffer = bufnr, noremap = true })
 	vim.keymap.set({ "n", "v" }, opts.mappings.open_item, M.open_item, { buffer = bufnr, noremap = true })
 	vim.keymap.set({ "n", "v" }, opts.mappings.refresh, M.refresh, { buffer = bufnr, noremap = true })
-	vim.keymap.set({ "n", "v" }, opts.mappings.close_all, M.close_all, { buffer = bufnr, noremap = true })
 	vim.keymap.set({ "n" }, opts.mappings.copy_url, M.copy_url, { buffer = bufnr, noremap = true })
 	vim.keymap.set({ "n" }, opts.mappings.copy_number, M.copy_item_number, { buffer = bufnr, noremap = true })
 	vim.keymap.set({ "n" }, opts.mappings.mark_as_read, M.mark_as_read, { buffer = bufnr, noremap = true })
@@ -407,6 +300,7 @@ M.open = function()
 		buffer = bufnr,
 		callback = require "octo".on_cursor_hold
 	})
+	vim.opt.concealcursor = "nvic"
 end
 
 M.setup = function(setup_opts)

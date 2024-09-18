@@ -44,14 +44,7 @@ So far, the only configuration keys are:
 
 ```lua
 {
-	default_open = false,   -- Expand the items by default
-	toggle_marks = {
-		open = "v",         -- icon when the item is open
-		closed = ">"        -- icon when the item is closed
-	},
 	mappings = {
-		toggle_item = "o",          -- mapping to toggle the item
-		close_all = "u",            -- mapping to close all items
 		open_item = "O",            -- mapping to open the item in Octo
 		refresh = "R",              -- mapping to refresh the notifications
 		copy_url = "Y",             -- mapping to copy the URL of the item
