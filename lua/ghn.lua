@@ -51,10 +51,11 @@ M.display = function()
 		local line = notification.repository ..
 			"#" ..
 			notification.number ..
-			" (" .. time.format(notification.updated_at) .. ")" ..
-			" - " ..
+			" " ..
 			notification.type ..
 			": " ..
+			"(" .. time.format(notification.updated_at) .. ")" ..
+			" - " ..
 			notification.title .. " [N.id " .. notification.id .. "]"
 		table.insert(lines, line)
 	end
@@ -300,7 +301,16 @@ M.open = function()
 		buffer = bufnr,
 		callback = require "octo".on_cursor_hold
 	})
-	vim.opt.concealcursor = "nvic"
+	vim.api.nvim_create_autocmd("BufEnter", {
+		group = augroup,
+		callback = function(e)
+			if e.file:find("GHN") then
+				vim.opt.concealcursor = "nvic"
+			else
+				vim.opt.concealcursor = "c"
+			end
+		end
+	})
 end
 
 M.setup = function(setup_opts)
