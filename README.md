@@ -1,6 +1,6 @@
 # GHN.nvim
 
-![image](https://github.com/user-attachments/assets/03b1f096-8d97-4d34-9e3f-12e0c97de30a)
+![image](https://github.com/user-attachments/assets/61faa2e0-f40f-4447-b636-c95d4caa0192)
 
 This started as a simple way to visualize and manage Github
 notifications at my job. I added assigned issues and opened PRs for convenience.
@@ -9,7 +9,8 @@ I am completely new to Lua and Neovim, so this might not be the best code you've
 ever seen. But I couln't find a plugin that did what I wanted, so I decided to make my own.
 
 ## Dependencies
-[Octo.nvim](https://github.com/pwntester/octo.nvim) is used to manage PRs and issues.
+[Octo.nvim](https://github.com/pwntester/octo.nvim) is used to manage PRs and issues, plus this plugin inherits the popup
+preview feature on cursor hold form it.
 
 ## Installation
 
@@ -54,3 +55,11 @@ So far, the only configuration keys are:
 	}
 }
 ```
+
+## Credits
+
+This plugin was created as an extension for [Octo](https://github.com/pwntester/octo.nvim), which is the real star here.
+I also came accross the [github-notifications.nvim](https://github.com/rlch/github-notifications.nvim) plugin, which looks great
+and shamelessly took the time formatting from it.
+
+Thanks to this awesome projects!
