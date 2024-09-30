@@ -49,14 +49,15 @@ M.display = function()
 	for i, notification in ipairs(M._notifications) do
 		notification.line = 3 + i
 		local line = notification.repository ..
-			"#" ..
-			notification.number ..
-			" " ..
-			notification.type ..
-			": " ..
-			"(" .. time.format(notification.updated_at) .. ")" ..
-			" - " ..
-			notification.title .. " [N.id " .. notification.id .. "]"
+		"#" ..
+		notification.number .. -- This first part of the line will be concealed, but display the popup on hover
+		" " ..
+		notification.type ..
+		": " ..
+		"(" .. time.format(notification.updated_at) .. ")" ..
+		" - " ..
+		" #" .. notification.number .. " " ..
+		notification.title .. " [N.id " .. notification.id .. "]"
 		table.insert(lines, line)
 	end
 	table.insert(lines, "")
@@ -64,9 +65,9 @@ M.display = function()
 	for i, issue in ipairs(M._issues) do
 		issue.line = 3 + #M._notifications + 2 + i
 		local line = issue.repository ..
-			"#" ..
-			issue.number ..
-			" (" .. time.format(issue.updated_at) .. ")" .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
+		"#" ..
+		issue.number ..
+		" (" .. time.format(issue.updated_at) .. ")" .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
 		table.insert(lines, line)
 	end
 	table.insert(lines, "")
@@ -74,8 +75,8 @@ M.display = function()
 	for i, pr in ipairs(M._pull_requests) do
 		pr.line = 3 + #M._notifications + 2 + #M._issues + 2 + i
 		local line = pr.repository ..
-			"#" ..
-			pr.number .. " (" .. time.format(pr.updated_at) .. ")" .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
+		"#" ..
+		pr.number .. " (" .. time.format(pr.updated_at) .. ")" .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
 		table.insert(lines, line)
 	end
 	vim.api.nvim_set_option_value("modified", true, { scope = "local" })
@@ -104,10 +105,15 @@ M.get_notifications = function()
 				{ stdin = result.stdout:gsub("\n", " ") }, vim.schedule_wrap(function(parsed)
 					M._notifications = {}
 					for _, item in ipairs(vim.json.decode(parsed.stdout)) do
-						item.number = item.url:match("%d*$")
-						item.url = item.url:gsub("api%.", ""):gsub("repos/", "")
-						if item.type == "PullRequest" then
-							item.url = item.url:gsub("s/" .. item.number .. "$", "/" .. item.number)
+						if item.type == "CheckSuite" then
+							item.number = item.id
+							item.url = item.html_url
+						else
+							item.number = item.url:match("%d*$")
+							item.url = item.url:gsub("api%.", ""):gsub("repos/", "")
+							if item.type == "PullRequest" then
+								item.url = item.url:gsub("s/" .. item.number .. "$", "/" .. item.number)
+							end
 						end
 						table.insert(M._notifications, item)
 					end
@@ -179,6 +185,10 @@ end
 M.open_item = function()
 	local cursor = vim.api.nvim_win_get_cursor(0)[1]
 	local type = utils.get_item_type(cursor)
+	if type == 'CheckSuite' then
+		vim.notify('Pipeline notifications does not have an open action', vim.log.levels.ERROR)
+		return
+	end
 	local id = utils.get_item_id(cursor)
 	local item = {}
 	if type == 'notification' then
@@ -243,7 +253,7 @@ M.mark_as_read = function()
 	local url = "https://api.github.com/notifications/threads/" .. id
 	vim.system(
 		{ 'curl', '-s', '-X', 'PATCH', '-H', 'Accept: application/vnd.github+json', '-H', 'Authorization: Bearer ' ..
-		token, '-H', 'X-Github-Api-Version: 2022-11-28', url }, {}, vim.schedule_wrap(function()
+			token, '-H', 'X-Github-Api-Version: 2022-11-28', url }, {}, vim.schedule_wrap(function()
 			vim.notify("Notification " .. id .. " marked as read")
 			_flags.pr = true
 			_flags.i = true
@@ -255,6 +265,10 @@ M.open_in_browser = function()
 	local cursor = vim.api.nvim_win_get_cursor(0)[1]
 	local id = utils.get_item_id(cursor)
 	local type = utils.get_item_type(cursor)
+	if type == 'CheckSuite' then
+		vim.notify('Pipeline notifications does not have an open action', vim.log.levels.ERROR)
+		return
+	end
 	local type_list = {}
 	if type == 'issue' then
 		type_list = M._issues

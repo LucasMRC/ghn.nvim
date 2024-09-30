@@ -5,6 +5,12 @@
 This started as a simple way to visualize and manage Github
 notifications at my job. I added assigned issues and opened PRs for convenience.
 
+To be completely honest, this plugin makes sense to me as most of my GH notifications
+are PRs and Issues. I recently got a notification about GH actions, and I realized that
+there are a lot more options than those this plugin is ready for. So, I updated a little
+to be sure it does not crash on GH actions notifications, but most certainly there are
+other notifications that this never took into consideration. And it may never do.
+
 I am completely new to Lua and Neovim, so this might not be the best code you've
 ever seen. But I couln't find a plugin that did what I wanted, so I decided to make my own.
 
