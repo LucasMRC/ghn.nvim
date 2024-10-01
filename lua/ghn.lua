@@ -56,7 +56,7 @@ M.display = function()
 		": " ..
 		"(" .. time.format(notification.updated_at) .. ")" ..
 		" - " ..
-		" #" .. notification.number .. " " ..
+		"#" .. notification.number .. " " ..
 		notification.title .. " [N.id " .. notification.id .. "]"
 		table.insert(lines, line)
 	end
@@ -67,7 +67,11 @@ M.display = function()
 		local line = issue.repository ..
 		"#" ..
 		issue.number ..
-		" (" .. time.format(issue.updated_at) .. ")" .. " - " .. issue.title .. " [I.id " .. issue.id .. "]"
+		" (" .. time.format(issue.updated_at) .. ")" ..
+		" - " ..
+		"#" .. issue.number .. " " ..
+		issue.title ..
+		" [I.id " .. issue.id .. "]"
 		table.insert(lines, line)
 	end
 	table.insert(lines, "")
@@ -76,7 +80,11 @@ M.display = function()
 		pr.line = 3 + #M._notifications + 2 + #M._issues + 2 + i
 		local line = pr.repository ..
 		"#" ..
-		pr.number .. " (" .. time.format(pr.updated_at) .. ")" .. " - " .. pr.title .. " [PR.id " .. pr.id .. "]"
+		pr.number ..
+		" (" .. time.format(pr.updated_at) .. ")" ..
+		" - " ..
+		"#" .. pr.number .. " " ..
+		pr.title .. " [PR.id " .. pr.id .. "]"
 		table.insert(lines, line)
 	end
 	vim.api.nvim_set_option_value("modified", true, { scope = "local" })
